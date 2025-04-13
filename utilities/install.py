@@ -14,7 +14,7 @@ def install_command(command):
 
 if __name__ == '__main__':
     commands = [
-        'pip install torch torchvision torchaudio'
+        'pip install torch torchvision torchaudio',
         'pip install lightning',
         'pip install -U tensorboard',
         'pip install requests',

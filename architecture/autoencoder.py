@@ -27,11 +27,11 @@ class Autoencoder(pl.LightningModule):
         self.leaning_rate = leaning_rate
 
         self.encoder = create_dense_architecture(
+            flatten_input=True,
             input_dimension=input_size,
             configuration_hidden_layers=encoder_configuration,
             output_dimension=lantent_space_size,
             activation_function_class=activation_function_class,
-            flatten_input=True,
         )
         self.decoder = create_dense_architecture(
             input_dimension=lantent_space_size,
@@ -39,6 +39,7 @@ class Autoencoder(pl.LightningModule):
             output_dimension=output_size,
             activation_function_class=activation_function_class,
             output_shape=output_shape,
+            final_activation_function_class=nn.Sigmoid,
         )
 
     def encode(self, x):
@@ -57,7 +58,6 @@ class Autoencoder(pl.LightningModule):
 
     def step(self, batch):
         x, _ = batch
-        x = x.view(x.size(0), -1)
         x_hat = self.forward(x)
         loss = self.loss_function(x_hat, x)
         return loss

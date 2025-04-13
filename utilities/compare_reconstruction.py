@@ -48,8 +48,8 @@ def compare_reconstruction(model: Autoencoder, samples: torch.Tensor, path: Path
         maximum_height = max(reconstruction_image.height, original_image.height)
         composite_image = Image.new('L', (total_width, maximum_height))
         # Paste the reconstruction on the left and the original on the right.
-        composite_image.paste(reconstruction_image, (0, 0))
-        composite_image.paste(original_image, (reconstruction_image.width, 0))
+        composite_image.paste(original_image, (0, 0))
+        composite_image.paste(reconstruction_image, (reconstruction_image.width, 0))
 
         # Check whether the composite image meets the minimum width or minimum height.
         # If not, compute the scale factor that makes both dimensions meet the threshold while preserving the ratio.

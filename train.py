@@ -8,6 +8,7 @@ import pytorch_lightning as pl
 from torchvision.datasets import MNIST
 
 from architecture.autoencoder import Autoencoder
+from architecture.variational_autoencoder import VariationalAutoencoder
 from utilities.data_module import DataModule
 from utilities.training_configuration import TrainingConfiguration
 
@@ -16,10 +17,19 @@ tensor_board_path = './tensor_board'
 save_checkpoint_path = './experiments'
 
 if __name__ == '__main__':
+    # configuration = TrainingConfiguration(
+    #     experiment_name='autoencoder_10_minutes',
+    #     dataset_class=MNIST,  # MNIST, CIFAR10
+    #     model_class=Autoencoder,
+    #     maximum_training_time=timedelta(minutes=10),
+    #     checkpoint_interval_time=timedelta(minutes=2),
+    #     number_model_to_train=6
+    # )
+
     configuration = TrainingConfiguration(
-        experiment_name='autoencoder_10_minutes',
+        experiment_name='variational_autoencoder_10_minutes',
         dataset_class=MNIST,  # MNIST, CIFAR10
-        model_class=Autoencoder,
+        model_class=VariationalAutoencoder,
         maximum_training_time=timedelta(minutes=10),
         checkpoint_interval_time=timedelta(minutes=2),
         number_model_to_train=6

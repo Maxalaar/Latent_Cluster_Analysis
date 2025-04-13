@@ -1,8 +1,10 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from architecture.autoencoder import Autoencoder
+from architecture.create_dense_architecture import create_dense_architecture
 
 
 class VariationalAutoencoder(Autoencoder):
@@ -26,33 +28,44 @@ class VariationalAutoencoder(Autoencoder):
             leaning_rate=leaning_rate,
         )
 
+        input_size = np.prod(input_shape)
+        self.encoder = create_dense_architecture(
+            flatten_input=True,
+            input_dimension=input_size,
+            configuration_hidden_layers=encoder_configuration[:-1],
+            output_dimension=encoder_configuration[-1],
+            activation_function_class=activation_function_class,
+        )
+
         self.mu_layer = nn.Sequential(activation_function_class(), nn.Linear(encoder_configuration[-1], lantent_space_size))
         self.logvar_layer = nn.Sequential(activation_function_class(), nn.Linear(encoder_configuration[-1], lantent_space_size))
+        self.mu = None
+        self.logvar = None
 
     def encode(self, x):
         x = self.encoder(x)
-        mu = self.mu_layer(x)
-        logvar = self.logvar_layer(x)
-        return mu, logvar
+        self.mu = self.mu_layer(x)
+        self.logvar = self.logvar_layer(x)
+        z = self.reparameterize()
+        return z
 
-    def reparameterize(self, mu, logvar):
-        epsilon = torch.randn_like(logvar)
-        return mu + torch.sqrt(logvar.exp()) * epsilon
+    def reparameterize(self):
+        epsilon = torch.randn_like(self.logvar)
+        return self.mu + torch.sqrt(self.logvar.exp()) * epsilon
 
     def forward(self, x):
-        mu, logvar = self.encode(x)
-        z = self.reparameterize(mu, logvar)
-        x_hat = self.decoder(z)
-        return x_hat, mu, logvar
+        x = self.encode(x)
+        # z = self.reparameterize(mu, logvar)
+        x_hat = self.decoder(x)
+        return x_hat
 
-    def loss_function(self, x_hat, x, mu, logvar):
+    def loss_function(self, x_hat, x):
         recon_loss = F.binary_cross_entropy(x_hat, x, reduction='sum')
-        kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        kl_div = -0.5 * torch.sum(1 + self.logvar - self.mu.pow(2) - self.logvar.exp())
         return recon_loss + kl_div
 
     def step(self, batch):
         x, _ = batch
-        x = x.view(x.size(0), -1)
-        x_hat, mu, logvar = self.forward(x)
-        loss = self.loss_function(x_hat, x, mu, logvar)
+        x_hat = self.forward(x)
+        loss = self.loss_function(x_hat, x)
         return loss

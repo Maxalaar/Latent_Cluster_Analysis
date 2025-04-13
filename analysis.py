@@ -14,15 +14,15 @@ from sklearn.cluster import KMeans
 
 
 if __name__ == '__main__':
-    repository_path = Path('/home/malaarabiou/Programming_Projects/Pycharm_Projects/Latent_Cluster_Analysis/experiments/autoencoder_10_minutes')
+    repository_path = Path('experiments/variational_autoencoder_10_minutes')
     checkpoint_paths = get_checkpoint_paths(repository_path)
     number_sample = 10_000
-    cluster_number = 8
+    cluster_number = 2
     clustering_function = KMeans(n_clusters=cluster_number)
     use_tsne = False
     use_clustering = True
     use_adjusted_rand_index = True
-    use_compare_reconstruction = True
+    use_compare_reconstruction = False
 
     dataset_class = MNIST
     dataset = dataset_class(
@@ -43,26 +43,29 @@ if __name__ == '__main__':
     cluster_label_list = list()
 
     for checkpoint_path in checkpoint_paths:
+        save_path = checkpoint_path.parents[3] / 'analysis' / checkpoint_path.parents[1].name
         training_configuration: TrainingConfiguration = TrainingConfiguration().load(checkpoint_path.parents[1] / 'training_configuration.yaml')
         model: Autoencoder = training_configuration.model_class.load_from_checkpoint(checkpoint_path)
 
         # Encode samples
         with torch.no_grad():
             code = model.encode(samples.to(model.device))
+            # if type(code) is tuple:
+            #     code = code[0]
             code = code.cpu().numpy()
 
         if use_compare_reconstruction:
             compare_reconstruction(
                 model=model,
                 samples=samples,
-                path=checkpoint_path.parents[1],
+                path=save_path,
             )
 
         if use_clustering or use_adjusted_rand_index:
             cluster_label = clustering_function.fit_predict(code)
 
         if use_tsne:
-            tsne(code, checkpoint_path.parents[1])
+            tsne(code, save_path)
 
         if use_adjusted_rand_index:
             cluster_label_list.append(cluster_label)

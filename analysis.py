@@ -14,15 +14,15 @@ from sklearn.cluster import KMeans
 
 
 if __name__ == '__main__':
-    repository_path = Path('experiments/variational_autoencoder_10_minutes')
+    repository_path = Path('experiments/autoencoder_10_minutes')
     checkpoint_paths = get_checkpoint_paths(repository_path)
     number_sample = 10_000
-    cluster_number = 2
+    cluster_number = 10
     clustering_function = KMeans(n_clusters=cluster_number)
-    use_tsne = False
+    use_tsne = True
     use_clustering = True
     use_adjusted_rand_index = True
-    use_compare_reconstruction = False
+    use_compare_reconstruction = True
 
     dataset_class = MNIST
     dataset = dataset_class(
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     data_loader = DataLoader(subset, batch_size=number_sample, shuffle=False)
 
     # Load samples
-    samples = next(iter(data_loader))[0]  # Take the images from the batch
+    samples, dataset_label = next(iter(data_loader))  # Take the images from the batch
 
     cluster_label_list = list()
 
@@ -65,7 +65,7 @@ if __name__ == '__main__':
             cluster_label = clustering_function.fit_predict(code)
 
         if use_tsne:
-            tsne(code, save_path)
+            tsne(code, save_path, dataset_label)
 
         if use_adjusted_rand_index:
             cluster_label_list.append(cluster_label)

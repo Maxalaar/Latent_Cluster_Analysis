@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
 from typing import Tuple, Type
@@ -12,6 +12,7 @@ class TrainingConfiguration:
     experiment_name: str = None
     dataset_class: Type = None
     model_class: Type = None
+    model_configuration: dict = field(default_factory=dict)
     patience: int = float('inf')
     checkpoint_interval_time: timedelta = timedelta(minutes=1)
     validation_interval: int = 20

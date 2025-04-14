@@ -17,6 +17,8 @@ class VariationalAutoencoder(Autoencoder):
         lantent_space_size=8,
         decoder_configuration=[16, 32, 64],
         leaning_rate=1e-3,
+        reconstruction_loss_coefficient: float = 1.0,
+        kullback_leibler_divergence_loss_coefficient: float = 0.00025,
     ):
         super().__init__(
             input_shape=input_shape,
@@ -42,6 +44,9 @@ class VariationalAutoencoder(Autoencoder):
         self.mu = None
         self.logvar = None
 
+        self.reconstruction_loss_coefficient: float = reconstruction_loss_coefficient
+        self.kullback_leibler_divergence_loss_coefficient: float = kullback_leibler_divergence_loss_coefficient
+
     def encode(self, x):
         x = self.encoder(x)
         self.mu = self.mu_layer(x)
@@ -55,14 +60,15 @@ class VariationalAutoencoder(Autoencoder):
 
     def forward(self, x):
         x = self.encode(x)
-        # z = self.reparameterize(mu, logvar)
         x_hat = self.decoder(x)
         return x_hat
 
     def loss_function(self, x_hat, x):
-        recon_loss = F.binary_cross_entropy(x_hat, x, reduction='sum')
-        kl_div = -0.5 * torch.sum(1 + self.logvar - self.mu.pow(2) - self.logvar.exp())
-        return recon_loss + kl_div
+        reconstruction_loss = F.mse_loss(x_hat, x, reduction='mean')
+        kullback_leibler_divergence_loss = torch.mean(-0.5 * torch.sum(1+self.logvar - self.mu**2 - self.logvar.exp(), dim=1), dim=0)
+        self.log('reconstruction_loss', reconstruction_loss, on_step=True, on_epoch=True)
+        self.log('kullback_leibler_divergence_loss', kullback_leibler_divergence_loss, on_step=True, on_epoch=True)
+        return self.reconstruction_loss_coefficient * reconstruction_loss + self.kullback_leibler_divergence_loss_coefficient * kullback_leibler_divergence_loss
 
     def step(self, batch):
         x, _ = batch

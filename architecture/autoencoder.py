@@ -54,7 +54,9 @@ class Autoencoder(pl.LightningModule):
         return x
 
     def loss_function(self, x_hat, x):
-        return F.mse_loss(x_hat, x)
+        reconstruction_loss = F.mse_loss(x_hat, x)
+        self.log('reconstruction_loss', reconstruction_loss, on_step=True, on_epoch=True)
+        return reconstruction_loss
 
     def step(self, batch):
         x, _ = batch

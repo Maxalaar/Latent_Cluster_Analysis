@@ -1,48 +1,17 @@
-from datetime import timedelta
 from pathlib import Path
-
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 import pytorch_lightning as pl
-
-from torchvision.datasets import MNIST
-
-from architecture.autoencoder import Autoencoder
-from architecture.variational_autoencoder import VariationalAutoencoder
 from utilities.data_module import DataModule
-from utilities.training_configuration import TrainingConfiguration
+from configurations import *
 
 dataset_directory='./dataset'
 tensor_board_path = './tensor_board'
 save_checkpoint_path = './experiments'
 
 if __name__ == '__main__':
-    # configuration = TrainingConfiguration(
-    #     experiment_name='autoencoder_10_minutes',
-    #     dataset_class=MNIST,  # MNIST, CIFAR10
-    #     model_class=Autoencoder,
-    #     maximum_training_time=timedelta(minutes=10),
-    #     checkpoint_interval_time=timedelta(minutes=2),
-    #     number_model_to_train=6
-    # )
 
-    configuration = TrainingConfiguration(
-        experiment_name='variational_autoencoder_10_minutes',
-        dataset_class=MNIST,  # MNIST, CIFAR10
-        model_class=VariationalAutoencoder,
-        maximum_training_time=timedelta(minutes=10),
-        checkpoint_interval_time=timedelta(minutes=2),
-        number_model_to_train=6
-    )
-
-    # configuration = TrainingConfiguration(
-    #     experiment_name='debug',
-    #     dataset_class=MNIST,
-    #     model_class=Autoencoder,
-    #     maximum_training_time=timedelta(minutes=0.5),
-    #     checkpoint_interval_time=timedelta(minutes=0.25),
-    #     number_model_to_train=6,
-    # )
+    configuration = autoencoder_10_minutes
 
     data_module = DataModule(
         dataset_class=configuration.dataset_class,
@@ -67,6 +36,7 @@ if __name__ == '__main__':
         model = configuration.model_class(
             input_shape=data_module.shape,
             output_shape=data_module.shape,
+            **configuration.model_configuration,
         )
 
         logger = TensorBoardLogger(

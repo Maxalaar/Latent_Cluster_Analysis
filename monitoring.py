@@ -49,7 +49,9 @@ def wait_for_tensorboard(host: str = 'http://localhost', port: int = 6006, timeo
 if __name__ == "__main__":
     list = [
         'train_loss_epoch',
-        'validation_loss_epoch',
+        'validation_loss',
+        'kullback_leibler_divergence_loss_epoch',
+        'reconstruction_loss_epoch',
     ]
 
     process = Process(target=run_tensorboard)

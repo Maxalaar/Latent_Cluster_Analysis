@@ -52,6 +52,8 @@ if __name__ == "__main__":
         'validation_loss',
         'kullback_leibler_divergence_loss_epoch',
         'reconstruction_loss_epoch',
+        'min_distance_centroids_epoch',
+        'mean_distance_intra_cluster_epoch',
     ]
 
     process = Process(target=run_tensorboard)

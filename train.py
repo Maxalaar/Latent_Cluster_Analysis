@@ -11,7 +11,7 @@ save_checkpoint_path = './experiments'
 
 if __name__ == '__main__':
 
-    configuration = autoencoder_10_minutes
+    configuration = clustering_autoencoder_60_minutes
 
     data_module = DataModule(
         dataset_class=configuration.dataset_class,

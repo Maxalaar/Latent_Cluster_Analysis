@@ -14,7 +14,7 @@ from sklearn.cluster import KMeans
 
 
 if __name__ == '__main__':
-    repository_path = Path('experiments/autoencoder_10_minutes')
+    repository_path = Path('experiments/clustering_autoencoder_60_minutes')
     checkpoint_paths = get_checkpoint_paths(repository_path)
     number_sample = 10_000
     cluster_number = 10

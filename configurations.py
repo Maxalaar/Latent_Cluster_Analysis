@@ -5,6 +5,7 @@ from torchvision.datasets import MNIST
 
 from architecture.autoencoder import Autoencoder
 from architecture.clustering_autoencoder import ClusteringAutoencoder
+from architecture.deep_embedding_clustering import DeepEmbeddingClustering
 from architecture.variational_autoencoder import VariationalAutoencoder
 from utilities.training_configuration import TrainingConfiguration
 
@@ -37,8 +38,21 @@ clustering_autoencoder_10_minutes = TrainingConfiguration(
         'memory_size': 10_000,
         'clustering_loss_coefficient': 0.1,
     },
-    maximum_training_time=timedelta(minutes=15),
+    maximum_training_time=timedelta(minutes=10),
     checkpoint_interval_time=timedelta(minutes=2),
+    number_model_to_train=6,
+)
+
+brendan = TrainingConfiguration(
+    experiment_name='brendan',
+    dataset_class=MNIST,  # MNIST, CIFAR10
+    model_class=DeepEmbeddingClustering,
+    model_configuration={
+        'number_cluster': 10,
+        'clustering_loss_coefficient': 100,
+    },
+    maximum_training_time=timedelta(minutes=5),
+    checkpoint_interval_time=timedelta(minutes=0.5),
     number_model_to_train=6,
 )
 
@@ -61,9 +75,15 @@ clustering_autoencoder_60_minutes = TrainingConfiguration(
 debug = TrainingConfiguration(
     experiment_name='debug',
     dataset_class=MNIST,
-    model_class=VariationalAutoencoder,
-    maximum_training_time=timedelta(minutes=0.5),
-    checkpoint_interval_time=timedelta(minutes=0.25),
+    model_class=DeepEmbeddingClustering,
+    model_configuration={
+        'number_cluster': 10,
+        'reconstruction_loss_coefficient': 0.0,
+        'clustering_loss_coefficient': 1.0,
+        'lantent_space_size': 2,
+    },
+    maximum_training_time=timedelta(minutes=5),
+    checkpoint_interval_time=timedelta(minutes=1),
     number_model_to_train=6,
 )
 

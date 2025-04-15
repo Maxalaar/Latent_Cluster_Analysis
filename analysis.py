@@ -14,7 +14,7 @@ from sklearn.cluster import KMeans
 
 
 if __name__ == '__main__':
-    repository_path = Path('experiments/clustering_autoencoder_60_minutes')
+    repository_path = Path('experiments/debug')
     checkpoint_paths = get_checkpoint_paths(repository_path)
     number_sample = 10_000
     cluster_number = 10
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     use_tsne = True
     use_clustering = True
     use_adjusted_rand_index = True
-    use_compare_reconstruction = True
+    use_compare_reconstruction = False
 
     dataset_class = MNIST
     dataset = dataset_class(

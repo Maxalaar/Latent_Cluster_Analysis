@@ -25,6 +25,7 @@ def tsne(embeddings: torch.Tensor, path: Path = None, cluster_label = None):
     if path is not None:
         # path.parent.mkdir(parents=True, exist_ok=True)
         file_path = path / 'tsne.png'
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         plt.savefig(file_path, bbox_inches='tight')
         print(f"t-SNE plot saved to {file_path}")
     else:

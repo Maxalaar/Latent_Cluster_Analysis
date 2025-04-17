@@ -14,7 +14,7 @@ class VariationalAutoencoder(Autoencoder):
         output_shape,
         activation_function_class=nn.LeakyReLU,
         encoder_configuration=[64, 32, 16],
-        lantent_space_size=8,
+        latent_space_size=8,
         decoder_configuration=[16, 32, 64],
         leaning_rate=1e-3,
         reconstruction_loss_coefficient: float = 1.0,
@@ -25,7 +25,7 @@ class VariationalAutoencoder(Autoencoder):
             output_shape=output_shape,
             activation_function_class=activation_function_class,
             encoder_configuration=encoder_configuration,
-            lantent_space_size=lantent_space_size,
+            latent_space_size=latent_space_size,
             decoder_configuration=decoder_configuration,
             leaning_rate=leaning_rate,
         )
@@ -39,8 +39,8 @@ class VariationalAutoencoder(Autoencoder):
             activation_function_class=activation_function_class,
         )
 
-        self.mu_layer = nn.Sequential(activation_function_class(), nn.Linear(encoder_configuration[-1], lantent_space_size))
-        self.logvar_layer = nn.Sequential(activation_function_class(), nn.Linear(encoder_configuration[-1], lantent_space_size))
+        self.mu_layer = nn.Sequential(activation_function_class(), nn.Linear(encoder_configuration[-1], latent_space_size))
+        self.logvar_layer = nn.Sequential(activation_function_class(), nn.Linear(encoder_configuration[-1], latent_space_size))
         self.mu = None
         self.logvar = None
 

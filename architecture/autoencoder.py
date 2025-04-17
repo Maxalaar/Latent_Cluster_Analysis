@@ -15,7 +15,7 @@ class Autoencoder(pl.LightningModule):
             output_shape,
             activation_function_class=nn.LeakyReLU,
             encoder_configuration=[64, 32, 16],
-            lantent_space_size=8,
+            latent_space_size=8,
             decoder_configuration=[16, 32, 64],
             leaning_rate=1e-3,
     ):
@@ -30,11 +30,11 @@ class Autoencoder(pl.LightningModule):
             flatten_input=True,
             input_dimension=input_size,
             configuration_hidden_layers=encoder_configuration,
-            output_dimension=lantent_space_size,
+            output_dimension=latent_space_size,
             activation_function_class=activation_function_class,
         )
         self.decoder = create_dense_architecture(
-            input_dimension=lantent_space_size,
+            input_dimension=latent_space_size,
             configuration_hidden_layers=decoder_configuration,
             output_dimension=output_size,
             activation_function_class=activation_function_class,

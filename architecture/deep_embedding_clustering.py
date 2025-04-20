@@ -7,6 +7,9 @@ from datetime import datetime, timedelta
 from architecture.autoencoder import Autoencoder
 from architecture.loss.kmeans import Kmeans
 
+from sklearn.cluster import KMeans
+
+# https://arxiv.org/abs/1511.06335
 class DeepEmbeddingClustering(Autoencoder):
     def __init__(
         self,
@@ -21,7 +24,7 @@ class DeepEmbeddingClustering(Autoencoder):
         alpha: float = 1.0,
         reconstruction_loss_coefficient: float = 1.0,
         clustering_loss_coefficient: float = 1.0,
-        clustering_loss_delay=timedelta(minutes=0),
+        clustering_loss_start_epoch: int = 0,
         max_saved_embeddings: int = 10_000,
     ):
         super().__init__(
@@ -38,8 +41,7 @@ class DeepEmbeddingClustering(Autoencoder):
         self.alpha = alpha
         self.reconstruction_loss_coefficient = reconstruction_loss_coefficient
         self.clustering_loss_coefficient = clustering_loss_coefficient
-        self.start_time = datetime.now()
-        self.clustering_loss_delay = clustering_loss_delay
+        self.clustering_loss_start_epoch = clustering_loss_start_epoch
 
         self.kullback_leibler_divergence = nn.KLDivLoss(size_average=False)
 
@@ -53,16 +55,13 @@ class DeepEmbeddingClustering(Autoencoder):
     def forward(self, x):
         self.embeddings = self.encode(x)
 
-        if datetime.now() - self.start_time < self.clustering_loss_delay:
+        if self.current_epoch < self.clustering_loss_start_epoch:
             self._update_embedding_buffer(self.embeddings.detach())
 
         x_hat = self.decoder(self.embeddings)
         return x_hat
 
     def _update_embedding_buffer(self, new_embeddings: torch.Tensor):
-        """
-        Add new embeddings to the circular buffer.
-        """
         self.embedding_buffer.append(new_embeddings)
         total = sum(e.shape[0] for e in self.embedding_buffer)
         while total > self.max_saved_embeddings:
@@ -70,13 +69,9 @@ class DeepEmbeddingClustering(Autoencoder):
             total -= removed.shape[0]
 
     def initialize_centroids_with_kmeans(self):
-        """
-        Use the most recent embeddings in the buffer to initialize centroids using KMeans.
-        """
-        print()
-        print('Initialize Centroids')
+        print("\nInitialize Centroids")
         if len(self.embedding_buffer) > 0:
-            print('Use Kmeans')
+            print("Use KMeans")
             all_embeddings = torch.cat(self.embedding_buffer, dim=0)
             self.centroids = nn.Parameter(self.kmeans(all_embeddings)['centroids'])
         del self.embedding_buffer
@@ -86,7 +81,7 @@ class DeepEmbeddingClustering(Autoencoder):
         reconstruction_loss = F.mse_loss(x_hat, x, reduction='mean')
         clustering_loss = 0.0
 
-        if datetime.now() - self.start_time >= self.clustering_loss_delay:
+        if self.current_epoch >= self.clustering_loss_start_epoch:
             if not self.initialisation_centroid_done:
                 self.initialize_centroids_with_kmeans()
 
@@ -103,10 +98,18 @@ class DeepEmbeddingClustering(Autoencoder):
 
         self.log('clustering_loss', clustering_loss, on_step=True, on_epoch=True)
         self.log('reconstruction_loss', reconstruction_loss, on_step=True, on_epoch=True)
-        return self.reconstruction_loss_coefficient * reconstruction_loss + self.clustering_loss_coefficient * clustering_loss
 
-    def step(self, batch):
-        x, _ = batch
-        x_hat = self.forward(x)
-        loss = self.loss_function(x_hat, x)
-        return loss
+        return (
+            self.reconstruction_loss_coefficient * reconstruction_loss
+            + self.clustering_loss_coefficient * clustering_loss
+        )
+
+    def clustering_function(self, number_cluster, embedding):
+        if self.number_cluster == number_cluster:
+            return KMeans(
+                n_clusters=self.number_cluster,
+                init=self.centroids.detach().cpu().numpy(),
+                n_init=0,
+                max_iter=0,
+            ).fit_predict(embedding)
+

@@ -23,6 +23,7 @@ class ClusteringAutoencoder(Autoencoder):
         memory_size: int = 0,
         reconstruction_loss_coefficient: float = 1.0,
         clustering_loss_coefficient: float = 1.0,
+        clustering_loss_epoch: int = 0,
     ):
         super().__init__(
             input_shape=input_shape,
@@ -35,6 +36,7 @@ class ClusteringAutoencoder(Autoencoder):
         )
         self.embeddings = None
 
+        self.clustering_loss_epoch = clustering_loss_epoch
         self.reconstruction_loss_coefficient = reconstruction_loss_coefficient
         self.clustering_loss_coefficient = clustering_loss_coefficient
 
@@ -57,12 +59,17 @@ class ClusteringAutoencoder(Autoencoder):
 
     def loss_function(self, x_hat, x):
         reconstruction_loss = F.mse_loss(x_hat, x, reduction='mean')
-        clustering_result = self.kmeans.forward(embeddings=self.embeddings)
-        clustering_loss = self.distance_centroid_loss(
-            embeddings=self.embeddings,
-            **clustering_result,
-        )
+        clustering_loss = 0.0
+
+        if self.current_epoch >= self.clustering_loss_epoch:
+            clustering_result = self.kmeans.forward(embeddings=self.embeddings)
+            clustering_loss = self.distance_centroid_loss(
+                embeddings=self.embeddings,
+                **clustering_result,
+            )
+
         self.log('reconstruction_loss', reconstruction_loss, on_step=True, on_epoch=True)
+        self.log('clustering_loss', clustering_loss, on_step=True, on_epoch=True)
         return self.reconstruction_loss_coefficient * reconstruction_loss + self.clustering_loss_coefficient * clustering_loss
 
     def step(self, batch):

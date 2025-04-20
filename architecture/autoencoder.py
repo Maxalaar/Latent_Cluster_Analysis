@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 import numpy as np
+from sklearn.cluster import KMeans
 
 
 from architecture.create_dense_architecture import create_dense_architecture
@@ -76,3 +77,7 @@ class Autoencoder(pl.LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.leaning_rate)
+
+    @staticmethod
+    def clustering(number_cluster, embedding):
+        return KMeans(n_clusters=number_cluster).fit_predict(embedding)

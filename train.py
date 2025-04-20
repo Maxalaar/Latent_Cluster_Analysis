@@ -11,7 +11,7 @@ save_checkpoint_path = './experiments'
 
 if __name__ == '__main__':
 
-    configuration = debug
+    configuration = deep_embedding_clustering_autoencoder_20_minutes
 
     data_module = DataModule(
         dataset_class=configuration.dataset_class,
@@ -24,14 +24,6 @@ if __name__ == '__main__':
 
     for i in range(configuration.number_model_to_train):
         print(f"Starting training model {i + 1}/{configuration.number_model_to_train}")
-
-        early_stopping = EarlyStopping(
-            monitor='validation_loss',
-            min_delta=0.00,
-            patience=configuration.patience,
-            verbose=True,
-            mode='min',
-        )
 
         model = configuration.model_class(
             input_shape=data_module.shape,
@@ -51,11 +43,11 @@ if __name__ == '__main__':
         )
 
         trainer = pl.Trainer(
-            max_epochs=-1,
+            max_epochs=configuration.maximum_training_epochs,
             max_time=configuration.maximum_training_time,
             logger=logger,
             check_val_every_n_epoch=configuration.validation_interval,
-            callbacks=[checkpoint_callback, early_stopping],
+            callbacks=[checkpoint_callback],
         )
 
         trainer.fit(

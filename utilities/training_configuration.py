@@ -16,7 +16,8 @@ class TrainingConfiguration:
     patience: int = float('inf')
     checkpoint_interval_time: timedelta = timedelta(minutes=1)
     validation_interval: int = 20
-    maximum_training_time: timedelta = timedelta(minutes=30)
+    maximum_training_epochs: int = -1
+    maximum_training_time: timedelta = None
     number_model_to_train: int = 10
     batch_size: int = 64
     train_validation_split: Tuple[float, float] = (0.9, 0.1)

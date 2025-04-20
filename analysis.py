@@ -10,15 +10,13 @@ from utilities.mean_adjusted_rand_index import mean_adjusted_rand_index
 from utilities.training_configuration import TrainingConfiguration
 
 from utilities.tsne import tsne
-from sklearn.cluster import KMeans
 
 
 if __name__ == '__main__':
-    repository_path = Path('experiments/debug')
+    repository_path = Path('experiments/autoencoder_10_minutes')
     checkpoint_paths = get_checkpoint_paths(repository_path)
     number_sample = 10_000
     cluster_number = 10
-    clustering_function = KMeans(n_clusters=cluster_number)
     use_tsne = True
     use_clustering = True
     use_adjusted_rand_index = True
@@ -50,8 +48,6 @@ if __name__ == '__main__':
         # Encode samples
         with torch.no_grad():
             code = model.encode(samples.to(model.device))
-            # if type(code) is tuple:
-            #     code = code[0]
             code = code.cpu().numpy()
 
         if use_compare_reconstruction:
@@ -62,7 +58,7 @@ if __name__ == '__main__':
             )
 
         if use_clustering or use_adjusted_rand_index:
-            cluster_label = clustering_function.fit_predict(code)
+            cluster_label = model.clustering(cluster_number, code)
 
         if use_tsne:
             tsne(code, save_path, dataset_label)

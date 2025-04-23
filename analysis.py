@@ -7,13 +7,14 @@ from architecture.autoencoder import Autoencoder
 from utilities.compare_reconstruction import compare_reconstruction
 from utilities.get_checkpoint_paths import get_checkpoint_paths
 from utilities.mean_adjusted_rand_index import mean_adjusted_rand_index
+from utilities.save_tsne import save_tsne
 from utilities.training_configuration import TrainingConfiguration
 
 from utilities.tsne import tsne
 
 
 if __name__ == '__main__':
-    repository_path = Path('experiments/autoencoder_10_minutes')
+    repository_path = Path('/home/malaarabiou/Programming_Projects/Pycharm_Projects/Latent_Cluster_Analysis/experiments/multilayer_clustering_autoencoder_800_epochs/model/version_3')
     checkpoint_paths = get_checkpoint_paths(repository_path)
     number_sample = 10_000
     cluster_number = 10
@@ -61,7 +62,9 @@ if __name__ == '__main__':
             cluster_label = model.clustering(cluster_number, code)
 
         if use_tsne:
-            tsne(code, save_path, dataset_label)
+            projection_2d = tsne(code)
+            save_tsne(projection_2d, save_path, dataset_label, name='dataset_label')
+            save_tsne(projection_2d, save_path, cluster_label, name='cluster_label')
 
         if use_adjusted_rand_index:
             cluster_label_list.append(cluster_label)

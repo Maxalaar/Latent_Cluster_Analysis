@@ -5,9 +5,11 @@ import torch.nn.functional as F
 from datetime import datetime, timedelta
 
 from architecture.autoencoder import Autoencoder
-from architecture.loss.kmeans import Kmeans
+from architecture.loss.kmeans_module import KMeansModule
+from sklearn.mixture import GaussianMixture
 
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, SpectralClustering
+
 
 # https://arxiv.org/abs/1511.06335
 class DeepEmbeddingClustering(Autoencoder):
@@ -19,8 +21,8 @@ class DeepEmbeddingClustering(Autoencoder):
         encoder_configuration=[64, 32, 16],
         latent_space_size=8,
         decoder_configuration=[16, 32, 64],
-        leaning_rate=1e-3,
-        number_cluster: int = 2,
+        learning_rate=1e-3,
+        number_clusters: int = 2,
         alpha: float = 1.0,
         reconstruction_loss_coefficient: float = 1.0,
         clustering_loss_coefficient: float = 1.0,
@@ -34,7 +36,7 @@ class DeepEmbeddingClustering(Autoencoder):
             encoder_configuration=encoder_configuration,
             latent_space_size=latent_space_size,
             decoder_configuration=decoder_configuration,
-            leaning_rate=leaning_rate,
+            learning_rate=learning_rate,
         )
         self.latent_space_size = latent_space_size
         self.embeddings = None
@@ -45,12 +47,12 @@ class DeepEmbeddingClustering(Autoencoder):
 
         self.kullback_leibler_divergence = nn.KLDivLoss(size_average=False)
 
-        self.number_cluster = number_cluster
-        self.centroids = nn.Parameter(torch.randn(self.number_cluster, self.latent_space_size, device='cuda'))
+        self.number_clusters = number_clusters
+        self.centroids = nn.Parameter(torch.randn(self.number_clusters, self.latent_space_size, device='cuda'))
         self.embedding_buffer = []
         self.max_saved_embeddings = max_saved_embeddings
         self.initialisation_centroid_done = False
-        self.kmeans = Kmeans(number_cluster=self.number_cluster)
+        self.kmeans = KMeansModule(number_cluster=self.number_clusters)
 
     def forward(self, x):
         self.embeddings = self.encode(x)
@@ -68,14 +70,42 @@ class DeepEmbeddingClustering(Autoencoder):
             removed = self.embedding_buffer.pop(0)
             total -= removed.shape[0]
 
-    def initialize_centroids_with_kmeans(self):
+    def initialize_centroids_with_clustering(self):
         print("\nInitialize Centroids")
         if len(self.embedding_buffer) > 0:
-            print("Use KMeans")
+            print("Use Clustering")
             all_embeddings = torch.cat(self.embedding_buffer, dim=0)
-            self.centroids = nn.Parameter(self.kmeans(all_embeddings)['centroids'])
+            clustering_function = KMeans(
+                n_clusters=self.number_clusters,
+                init='k-means++',
+                n_init=10,
+                max_iter=500,
+                tol=1e-5,
+                algorithm='elkan',
+                random_state=42
+            )
+            # clustering_function = GaussianMixture(
+            #     n_components=10,
+            #     random_state=42,
+            #     n_init=30,
+            # )
+            # clustering_function.cluster_centers_ = clustering_function.means_
+            # clustering_function.cluster_centers_ = clustering_function.means_
+
+            clustering_function.fit(all_embeddings.cpu().detach().numpy())
+            centroids_tensor = torch.from_numpy(clustering_function.cluster_centers_).to(self.device)
+            with torch.no_grad():
+                self.centroids.copy_(centroids_tensor)
         del self.embedding_buffer
+
+        # new_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        # self.trainer.optimizers = [new_optimizer]
+
         self.initialisation_centroid_done = True
+
+    def get_centroids_with_clustering(self):
+        all_embeddings = torch.cat(self.embedding_buffer, dim=0)
+        return self.kmeans(all_embeddings)['centroids']
 
     def loss_function(self, x_hat, x):
         reconstruction_loss = F.mse_loss(x_hat, x, reduction='mean')
@@ -83,7 +113,7 @@ class DeepEmbeddingClustering(Autoencoder):
 
         if self.current_epoch >= self.clustering_loss_start_epoch:
             if not self.initialisation_centroid_done:
-                self.initialize_centroids_with_kmeans()
+                self.initialize_centroids_with_clustering()
 
             norm_squared = torch.sum((self.embeddings.unsqueeze(1) - self.centroids) ** 2, 2)
             numerator = 1.0 / (1.0 + (norm_squared / self.alpha))
@@ -104,12 +134,12 @@ class DeepEmbeddingClustering(Autoencoder):
             + self.clustering_loss_coefficient * clustering_loss
         )
 
-    def clustering_function(self, number_cluster, embedding):
-        if self.number_cluster == number_cluster:
+    def clustering(self, number_cluster, embedding):
+        if self.number_clusters == number_cluster:
             return KMeans(
-                n_clusters=self.number_cluster,
+                n_clusters=self.number_clusters,
                 init=self.centroids.detach().cpu().numpy(),
-                n_init=0,
-                max_iter=0,
+                n_init=1,
+                max_iter=1,
             ).fit_predict(embedding)
 
